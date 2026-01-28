@@ -42,6 +42,9 @@ def main():
             plot_df = df_final.dropna(subset=['体積', '高さ'])
             
             if not plot_df.empty:
+                # カスタムカラーパレットの設定（オレンジ、黄緑、水色）
+                custom_colors = ["#FF8C00", "#7CFC00", "#00BFFF"]
+                
                 fig = px.scatter(
                     plot_df,
                     x="体積",
@@ -49,24 +52,26 @@ def main():
                     hover_name="名前",
                     hover_data=["製品コード", "充填機", "製品サイズ", "重量"],
                     color="充填機",
+                    color_discrete_sequence=custom_colors, # 指定色を適用
                     labels={"体積": "体積 (重量/比重)", "高さ": "高さ (計算値)"},
-                    range_x=[0, 0.04], # 横軸の範囲を固定
-                    range_y=[0, 10]     # 縦軸の範囲を固定
+                    range_x=[0, 0.04], 
+                    range_y=[0, 10]
                 )
                 
                 # プロットの点を小さく設定 (size=6)
                 fig.update_traces(
                     marker=dict(
-                        size=8, 
+                        size=6, 
                         opacity=0.8, 
-                        line=dict(width=0.5, color='white') # 縁取りを細くして見やすく
+                        line=dict(width=0.5, color='white')
                     )
                 )
                 
                 # レイアウト設定
                 fig.update_layout(
                     xaxis=dict(tickformat=".3f"),
-                    yaxis=dict(dtick=1)
+                    yaxis=dict(dtick=1),
+                    legend_title_text='充填機タイプ'
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
