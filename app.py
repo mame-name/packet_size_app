@@ -106,28 +106,26 @@ def main():
                     labels={"体積": "体積", "高さ": "高さ"}
                 )
 
-                # トレンドライン描画（点を除去して線のみ）
                 def add_trend(y_col, name, color):
                     temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
                     trend = temp_fig.data[1]
                     trend.name = name
                     trend.line.color = color
                     trend.line.width = LINE_WIDTH
-                    trend.mode = 'lines' # 線のみ表示
+                    trend.mode = 'lines'
                     fig.add_trace(trend)
 
                 add_trend("高さ", "全体平均", "DarkSlateGrey")
                 add_trend("上限高", "上限目安", "Orange")
                 add_trend("下限高", "下限目安", "DeepPink")
 
-                # シミュレーション星のプロット（二重表示を防止）
                 if sim_data:
                     fig.add_trace(go.Scatter(
                         x=[sim_data["vol"]], y=[sim_data["height"]],
                         mode='markers',
                         marker=dict(
                             symbol='star', 
-                            size=SIM_MARKER_SIZE, # ここで調整可能
+                            size=SIM_MARKER_SIZE,
                             color='red', 
                             line=dict(width=1.5, color='black')
                         ),
@@ -135,13 +133,24 @@ def main():
                         showlegend=True
                     ))
 
-                # 実績データのスタイル一括設定
                 fig.update_traces(
                     marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), 
-                    selector=dict(mode='markers', name=None) # 星以外に適用
+                    selector=dict(mode='markers', name=None)
                 )
                 
-                fig.update_layout(xaxis=dict(tickformat=".3f"), yaxis=dict(dtick=1), height=700)
+                # --- 凡例を下に配置するための設定 ---
+                fig.update_layout(
+                    xaxis=dict(tickformat=".3f"), 
+                    yaxis=dict(dtick=1), 
+                    height=700,
+                    legend=dict(
+                        orientation="h",   # 水平（horizontal）に配置
+                        yanchor="top",     # 凡例の上端を基準にする
+                        y=-0.1,            # グラフの下（負の値）に配置
+                        xanchor="center",  # 凡例の中心を基準にする
+                        x=0.5              # グラフの中央に配置
+                    )
+                )
                 st.plotly_chart(fig, use_container_width=True)
             
             st.subheader("📋 抽出データ詳細")
