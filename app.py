@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ"
 
 def main():
     st.title("📦 製品リスト抽出・分析ツール")
-    st.info("点は充填機ごとに色分けし、近似曲線は全体に対して「高さ・上限・下限」の3本のみを表示します。")
+    st.info("点は充填機ごとに色分けし、近似曲線（高さ・上限・下限）を実線で表示します。")
 
     uploaded_file = st.file_uploader("実績XLSMファイルをアップロード", type=['xlsm'])
     
@@ -20,15 +20,15 @@ def main():
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
             
-            st.subheader("📊 相関プロットと全体累乗近似（3本線）")
+            st.subheader("📊 相関プロットと全体累乗近似（実線3本）")
             
             # グラフ用データ（近似計算のため正の値のみ）
             plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
             plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0) & (plot_df['上限高'] > 0) & (plot_df['下限高'] > 0)].copy()
             
             if not plot_df.empty:
-                # 1. 散布図のみ作成 (trendlineはここでは引かない)
-                custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
+                # 1. 散布図作成
+                custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"] # 薄紫、黄緑、水色
                 fig = px.scatter(
                     plot_df, x="体積", y="高さ", color="充填機",
                     hover_name="名前", color_discrete_sequence=custom_colors,
@@ -37,23 +37,22 @@ def main():
                 )
 
                 # 2. 全体近似曲線の計算（高さ・上限・下限）
-                # colorを指定しない一時的な図からトレンドラインを抽出することで「全体で1本」にする
-                def get_trendline(y_col, name, color, dash=None):
+                def get_trendline(y_col, name, color):
                     temp_fig = px.scatter(plot_df, x="体積", y=y_col, 
                                         trendline="ols", 
                                         trendline_options=dict(log_x=True, log_y=True))
                     trend = temp_fig.data[1]
                     trend.name = name
                     trend.line.color = color
-                    if dash:
-                        trend.line.dash = dash
+                    trend.line.dash = "solid" # すべて実線に指定
+                    trend.line.width = 2      # 線を少し太くして目立たせる
                     return trend
 
-                # 近似曲線を追加
-                fig.add_trace(get_trendline("高さ", "高さ近似(全体)", "gray"))
-                fig.add_trace(get_trendline("上限高", "上限近似", "red", "dash"))
-                fig.add_trace(get_trendline("下限高", "下限近似", "blue", "dash"))
-
+                # 近似曲線の追加（目立つ配色）
+                fig.add_trace(get_trendline("高さ", "高さ近似", "DarkSlateGrey")) # 濃い灰色
+                fig.add_trace(get_trendline("上限高", "上限近似", "Orange"))       # オレンジ
+                fig.add_trace(get_trendline("下限高", "下限近似", "DeepPink"))     # 濃いピンク
+                
                 # 点のスタイル調整
                 fig.update_traces(
                     marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white')),
