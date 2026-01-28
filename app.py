@@ -57,7 +57,7 @@ def main():
                 # プロットの点を小さく設定 (size=6)
                 fig.update_traces(
                     marker=dict(
-                        size=6, 
+                        size=8, 
                         opacity=0.8, 
                         line=dict(width=0.5, color='white') # 縁取りを細くして見やすく
                     )
