@@ -39,8 +39,8 @@ def main():
 
             i_w = input_row("重量", "g")
             i_sg = input_row("比重", "0.000")
-            i_width = input_row("巾", "折返し巾 単位：mm")
-            i_length = input_row("長さ", "単位：mm", is_number=True)
+            i_width = input_row("巾", "折返し巾")
+            i_length = input_row("長さ", is_number=True)
             
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>機</div>", unsafe_allow_html=True)
