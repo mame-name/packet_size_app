@@ -1,13 +1,3 @@
-
-# データ処理・計算
 pandas>=2.0.0
-numpy>=1.24.0
-
-# Webアプリケーション・UI
-streamlit>=1.25.0
-
-# プロット・可視化（必要に応じて）
-matplotlib>=3.7.0
-
-# Excelファイルを読み込む場合（実績データがExcelの時用）
 openpyxl>=3.1.0
+streamlit>=1.25.0
