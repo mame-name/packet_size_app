@@ -1,57 +1,71 @@
+import streamlit as st
 import pandas as pd
+import plotly.express as px
+from calc import process_product_data
 
-def process_product_data(df):
-    """
-    製品一覧データを整理し、製品サイズがあるものだけを抽出。
-    面積、体積を算出し、それらを基に「高さ」を算出する。
-    """
-    df = df.copy()
+# 画面設定
+st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ")
 
-    # 1. 計算のために各列を数値型に変換
-    df['製品サイズ'] = df['製品サイズ'].astype(str).str.strip()
-    df['重量'] = pd.to_numeric(df['重量'], errors='coerce')
-    df['比重'] = pd.to_numeric(df['比重'], errors='coerce')
+def main():
+    st.title("📦 製品リスト抽出・分析ツール")
+    st.info("製品一覧の6行目以降からデータを抽出し、体積と高さの相関をプロットします。")
 
-    # 2. 製品サイズがブランクの行を除外
-    invalid_values = ['nan', 'None', '']
-    df = df[~df['製品サイズ'].isin(invalid_values)]
-
-    # 3. 製品サイズを「*」で分割し数値化
-    size_split = df["製品サイズ"].str.split('*', n=1, expand=True)
-    df["巾"] = pd.to_numeric(size_split[0], errors='coerce')
-    df["長さ"] = pd.to_numeric(size_split[1], errors='coerce')
+    uploaded_file = st.file_uploader("実績XLSMファイルをアップロードしてください", type=['xlsm'])
     
-    # 4. 「面積」列の追加
-    def calculate_area(row):
-        machine_name = str(row["充填機"])
-        w = row["巾"]
-        l = row["長さ"]
-        if pd.isna(w) or pd.isna(l):
-            return None
-        
-        if "FR" in machine_name:
-            return (w - 10) * l
-        else:
-            return (w - 8) * l
+    if uploaded_file:
+        try:
+            # 抽出対象列（A=0, B=1, E=4, F=5, G=6, J=9, P=15, R=17, S=18, Z=25, AA=26）
+            target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
+            col_names = [
+                "製品コード", "名前", "充填機", "重量", "入数", 
+                "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ"
+            ]
+            
+            # Excel読み込み
+            df_raw = pd.read_excel(
+                uploaded_file, 
+                sheet_name="製品一覧", 
+                usecols=target_indices, 
+                names=col_names,
+                skiprows=5,
+                engine='openpyxl',
+                dtype=object 
+            )
+            
+            # ロジック実行
+            df_final = process_product_data(df_raw)
+            
+            # 1. グラフ表示エリア
+            st.subheader("📊 体積 vs 高さ 相関プロット")
+            
+            # 数値があるデータのみでプロット
+            plot_df = df_final.dropna(subset=['体積', '高さ'])
+            
+            if not plot_df.empty:
+                fig = px.scatter(
+                    plot_df,
+                    x="体積",
+                    y="高さ",
+                    hover_name="名前",
+                    hover_data=["製品コード", "充填機", "製品サイズ", "重量"],
+                    color="充填機",
+                    labels={"体積": "体積 (重量/比重)", "高さ": "高さ (計算値)"}
+                )
+                fig.update_traces(marker=dict(size=12, opacity=0.7, line=dict(width=1, color='DarkSlateGrey')))
+                st.plotly_chart(fig, use_container_width=True)
+            else:
+                st.warning("プロットに必要な数値データが不足しています。")
 
-    df["面積"] = df.apply(calculate_area, axis=1)
+            # 2. データテーブル表示
+            st.subheader("📋 抽出データ一覧")
+            st.dataframe(df_final, use_container_width=True)
 
-    # 5. 「体積」列の追加 (重量 / 比重)
-    df["体積"] = df.apply(
-        lambda x: x["重量"] / x["比重"] if x["比重"] > 0 else None, 
-        axis=1
-    )
+            # CSVダウンロード
+            csv = df_final.to_csv(index=False).encode('utf-8-sig')
+            st.download_button("抽出データをCSVで保存", csv, "extracted_data.csv", "text/csv")
 
-    # 6. 「高さ」列の追加
-    # 計算式: 体積 / 面積 * 1,000,000 * 1.9
-    def calculate_height(row):
-        v = row["体積"]
-        a = row["面積"]
-        if pd.isna(v) or pd.isna(a) or a == 0:
-            return None
-        
-        return (v / a) * 1000000 * 1.9
+        except Exception as e:
+            st.error(f"エラーが発生しました: {e}")
 
-    df["高さ"] = df.apply(calculate_height, axis=1)
-    
-    return df
+if __name__ == "__main__":
+    main()
