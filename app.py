@@ -32,7 +32,7 @@ def main():
             # 長さのみ +/- ボタン付き、5単位で動く設定
             input_length = st.number_input("長さ (mm)", placeholder="単位：mm", value=0, step=5)
             
-            input_machine = st.selectbox("充填機", ["ZERO-1", "FR-1/5"])
+            input_machine = st.selectbox("充填機", ["FR-1/5", "ZERO-1"])
             
             submit = st.form_submit_button("シミュレーション実行")
 
