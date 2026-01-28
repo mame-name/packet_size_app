@@ -2,17 +2,24 @@ import pandas as pd
 
 def process_product_data(df):
     """
-    製品一覧データを整理し、サイズ列を分割する（計算は行わない）
+    製品一覧データを整理し、製品サイズがあるものだけを抽出・分割する
     """
     df = df.copy()
 
-    # AA列（製品サイズ）を「*」の前後で分割
-    # 文字列として処理し、分割した1番目を「巾」、2番目を「長さ」に格納
-    size_split = df["製品サイズ"].astype(str).str.split('*', n=1, expand=True)
+    # 1. 製品サイズ列を文字列として扱い、前後の空白を除去
+    df['製品サイズ'] = df['製品サイズ'].astype(str).str.strip()
+
+    # 2. 製品サイズがブランク、NaN、Noneの行を除外
+    # 文字列変換によりNaNは 'nan' になるため、それらも含めてフィルタリング
+    invalid_values = ['nan', 'None', '', 'None', 'nan']
+    df = df[~df['製品サイズ'].isin(invalid_values)]
+
+    # 3. AA列（製品サイズ）を「*」で分割
+    # n=1とすることで、複数の*があっても最初の1つで分割します
+    size_split = df["製品サイズ"].str.split('*', n=1, expand=True)
     
-    # 新規列の作成（データが存在する場合のみ格納）
+    # 4. 独立した「巾」と「長さ」列を作成（分割できなかった場合は空文字）
     df["巾"] = size_split[0] if 0 in size_split.columns else ""
     df["長さ"] = size_split[1] if 1 in size_split.columns else ""
     
-    # その他の列（重量、比重、ショット等）は読み込んだ状態のまま保持されます
     return df
