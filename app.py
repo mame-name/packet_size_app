@@ -85,8 +85,9 @@ def main():
             result_container.caption("結果がここに表示されます")
 
     # --- 右側：メインパネル ---
-    st.title("📦 小袋サイズ適正化")
-    st.subheader("📊 解析パネル")
+    st.markdown("<h1 style='text-align: center;'>🤖 🤖 小袋確認 🤖 🤖</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で仕込量を計算してくれるアプリです</p>", unsafe_allow_html=True)
+    st.markdown("---")
     if uploaded_file:
         try:
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
