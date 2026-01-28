@@ -22,7 +22,6 @@ def process_product_data(df):
     df["長さ"] = pd.to_numeric(size_split[1], errors='coerce')
     
     # 4. 「面積」列の追加
-    # FRあり: (巾-10)*長さ / なし: (巾-8)*長さ
     def calculate_area(row):
         machine_name = str(row["充填機"])
         w = row["巾"]
@@ -30,6 +29,7 @@ def process_product_data(df):
         if pd.isna(w) or pd.isna(l):
             return None
         
+        # 充填機に「FR」が含まれる場合のマージン計算
         if "FR" in machine_name:
             return (w - 10) * l
         else:
@@ -43,8 +43,7 @@ def process_product_data(df):
         axis=1
     )
 
-    # 6. 「高さ」列の追加
-    # 計算式: (体積 / 面積) * 1,000,000 * 1.9
+    # 6. 「高さ」列の追加 (体積 / 面積 * 1,000,000 * 1.9)
     def calculate_height(row):
         v = row["体積"]
         a = row["面積"]
@@ -55,4 +54,4 @@ def process_product_data(df):
 
     df["高さ"] = df.apply(calculate_height, axis=1)
     
-    return dfmain()
+    return df
