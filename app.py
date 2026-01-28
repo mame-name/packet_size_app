@@ -34,6 +34,32 @@ def main():
             
             # calc.pyのロジックで分割処理を実行
             df_final = process_product_data(df_raw)
+
+            import pandas as pd
+
+    def process_product_data(df):
+        """
+        製品一覧データを整理し、製品サイズがあるものだけを抽出・分割する
+        """
+        df = df.copy()
+    
+        # 1. 製品サイズがブランク（NaNまたは空文字）の行を除外
+        # 文字列に変換してから、'nan' や空文字を除去します
+        df['製品サイズ'] = df['製品サイズ'].astype(str).str.strip()
+        df = df[
+            (df['製品サイズ'] != 'nan') & 
+            (df['製品サイズ'] != 'None') & 
+            (df['製品サイズ'] != '')
+        ]
+    
+        # 2. AA列（製品サイズ）を「*」で分割
+        size_split = df["製品サイズ"].str.split('*', n=1, expand=True)
+        
+        # 3. 新規列の作成
+        df["巾"] = size_split[0] if 0 in size_split.columns else ""
+        df["長さ"] = size_split[1] if 1 in size_split.columns else ""
+        
+        return df
             
             # 結果表示
             st.success(f"抽出完了：{len(df_final)}件")
