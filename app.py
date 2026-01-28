@@ -54,13 +54,19 @@ def main():
                     range_y=[0, 10]     # 縦軸の範囲を固定
                 )
                 
-                # グラフのデザイン調整
-                fig.update_traces(marker=dict(size=12, opacity=0.7, line=dict(width=1, color='DarkSlateGrey')))
+                # プロットの点を小さく設定 (size=6)
+                fig.update_traces(
+                    marker=dict(
+                        size=6, 
+                        opacity=0.8, 
+                        line=dict(width=0.5, color='white') # 縁取りを細くして見やすく
+                    )
+                )
                 
-                # グリッド線の強調などのレイアウト設定
+                # レイアウト設定
                 fig.update_layout(
-                    xaxis=dict(tickformat=".3f"), # 小数点表示を調整
-                    yaxis=dict(dtick=1)           # 縦軸のメモリを1刻みに
+                    xaxis=dict(tickformat=".3f"),
+                    yaxis=dict(dtick=1)
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
