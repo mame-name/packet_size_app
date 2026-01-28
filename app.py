@@ -4,15 +4,18 @@ import plotly.express as px
 import plotly.graph_objects as go
 from calc import process_product_data
 
-# --- 設定値（GitHubで調整可能） ---
-LINE_WIDTH = 1
-MARKER_SIZE = 6
-PLOT_OPACITY = 0.8
-# ------------------------------
+# ==========================================
+# グラフの表示詳細設定（ここを書き換えて調整）
+# ==========================================
+LINE_WIDTH = 1           # 近似曲線の太さ
+MARKER_SIZE = 6          # 実績データのプロットサイズ
+SIM_MARKER_SIZE = 18     # シミュレーション結果（星）のサイズ
+PLOT_OPACITY = 0.8       # プロットの透明度
+# ==========================================
 
 st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ")
 
-# カスタムCSS: コンパクト化
+# カスタムCSS: サイドバーをコンパクトに
 st.markdown("""
     <style>
     [data-testid="stSidebar"] .stForm { border: none; padding: 0; }
@@ -22,6 +25,7 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def main():
+    # --- 左側：固定入力エリア (サイドバー) ---
     with st.sidebar:
         st.caption("📦 小袋サイズ適正化")
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
@@ -53,7 +57,7 @@ def main():
             
             submit = st.form_submit_button("計算実行", use_container_width=True)
 
-        # --- 指定された計算ロジックの適用 ---
+        # --- 計算ロジック ---
         sim_data = None
         if submit:
             try:
@@ -63,29 +67,20 @@ def main():
                 ln_v = float(i_length)
                 
                 if wd_v > 0 and ln_v > 0 and s_v > 0:
-                    # 1. 面積の計算
-                    if i_machine == "FR-1/5":
-                        sim_area = (wd_v - 10) * ln_v
-                    else: # ZERO-1
-                        sim_area = (wd_v - 8) * ln_v
-                    
-                    # 2. 体積の計算 (重量 / 1000 / 比重)
+                    sim_area = (wd_v - 10) * ln_v if i_machine == "FR-1/5" else (wd_v - 8) * ln_v
                     sim_vol = w_v / 1000 / s_v
-                    
-                    # 3. 高さの計算 (体積 / 面積 * 1000000 * 1.9)
                     sim_height = (sim_vol / sim_area) * 1000000 * 1.9
-                    
                     sim_data = {"vol": sim_vol, "height": sim_height}
                     
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
-                        <span style="font-size:0.75rem; color:#666;">最新の計算結果 ({i_machine})</span><br>
+                        <span style="font-size:0.75rem; color:#666;">最新結果 ({i_machine})</span><br>
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    result_container.error("正の数値を入力してください")
+                    result_container.error("正の数値を入力")
             except ValueError:
                 result_container.error("入力エラー")
         else:
@@ -113,27 +108,41 @@ def main():
                     labels={"体積": "体積", "高さ": "高さ"}
                 )
 
+                # トレンドライン描画（点を除去して線のみ）
                 def add_trend(y_col, name, color):
                     temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
                     trend = temp_fig.data[1]
                     trend.name = name
                     trend.line.color = color
                     trend.line.width = LINE_WIDTH
+                    trend.mode = 'lines' # 線のみ表示
                     fig.add_trace(trend)
 
                 add_trend("高さ", "全体平均", "DarkSlateGrey")
                 add_trend("上限高", "上限目安", "Orange")
                 add_trend("下限高", "下限目安", "DeepPink")
 
+                # シミュレーション星のプロット（二重表示を防止）
                 if sim_data:
                     fig.add_trace(go.Scatter(
                         x=[sim_data["vol"]], y=[sim_data["height"]],
-                        mode='markers+text',
-                        marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
-                        name='現在値', text=["★"], textposition="top center"
+                        mode='markers',
+                        marker=dict(
+                            symbol='star', 
+                            size=SIM_MARKER_SIZE, # ここで調整可能
+                            color='red', 
+                            line=dict(width=1.5, color='black')
+                        ),
+                        name='シミュレーション結果',
+                        showlegend=True
                     ))
 
-                fig.update_traces(marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white')), selector=dict(mode='markers'))
+                # 実績データのスタイル一括設定
+                fig.update_traces(
+                    marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), 
+                    selector=dict(mode='markers', name=None) # 星以外に適用
+                )
+                
                 fig.update_layout(xaxis=dict(tickformat=".3f"), yaxis=dict(dtick=1), height=700)
                 st.plotly_chart(fig, use_container_width=True)
             
@@ -141,9 +150,9 @@ def main():
             st.dataframe(df_final, use_container_width=True)
 
         except Exception as e:
-            st.error(f"エラーが発生しました: {e}")
+            st.error(f"エラー: {e}")
     else:
-        st.warning("左側のメニューからファイルをアップロードしてください。")
+        st.warning("ファイルをアップロードしてください")
 
 if __name__ == "__main__":
     main()
