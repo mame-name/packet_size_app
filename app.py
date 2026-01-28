@@ -9,7 +9,7 @@ from calc import process_product_data
 # ==========================================
 LINE_WIDTH = 1           
 MARKER_SIZE = 6          
-SIM_MARKER_SIZE = 8     
+SIM_MARKER_SIZE = 10     
 PLOT_OPACITY = 0.8       
 # ==========================================
 
