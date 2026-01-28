@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 from calc import process_product_data
 
 # 画面設定
@@ -8,7 +9,7 @@ st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ"
 
 def main():
     st.title("📦 製品リスト抽出・分析ツール")
-    st.info("製品一覧からデータを抽出し、体積と高さの相関および累乗近似曲線を表示します。")
+    st.info("製品一覧から抽出した全データに対して、1本の累乗近似曲線を表示します。")
 
     uploaded_file = st.file_uploader("実績XLSMファイルをアップロードしてください", type=['xlsm'])
     
@@ -21,7 +22,6 @@ def main():
                 "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ"
             ]
             
-            # Excel読み込み
             df_raw = pd.read_excel(
                 uploaded_file, 
                 sheet_name="製品一覧", 
@@ -36,18 +36,15 @@ def main():
             df_final = process_product_data(df_raw)
             
             # --- グラフ表示エリア ---
-            st.subheader("📊 体積 vs 高さ 相関プロット（累乗近似曲線付き）")
+            st.subheader("📊 体積 vs 高さ 相関プロット（全体近似曲線付き）")
             
-            # 数値があるデータのみでプロット（近似計算のため0以下の値も除外）
+            # 数値があるデータのみ（近似計算のため正の値のみ）
             plot_df = df_final.dropna(subset=['体積', '高さ'])
-            plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)]
+            plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
             
             if not plot_df.empty:
-                # カスタムカラー（薄紫、黄緑、水色）
+                # 1. 散布図の作成（充填機で色分け）
                 custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
-                
-                # trendline="ols" で対数軸を利用した累乗近似をシミュレート
-                # ※Plotly Expressで直接「累乗」を指定する際は、対数変換を伴う最小二乗法を用います
                 fig = px.scatter(
                     plot_df,
                     x="体積",
@@ -58,14 +55,27 @@ def main():
                     color_discrete_sequence=custom_colors,
                     labels={"体積": "体積 (重量/比重)", "高さ": "高さ (計算値)"},
                     range_x=[0, 0.04], 
-                    range_y=[0, 10],
-                    trendline="ols",             # 近似曲線を追加
-                    trendline_options=dict(log_x=True, log_y=True) # 累乗近似(y=ax^b)の設定
+                    range_y=[0, 10]
+                )
+
+                # 2. 全体に対する累乗近似曲線の計算用
+                # トレンドライン表示用のダミーグラフを作成して線だけ抽出
+                trend_fig = px.scatter(
+                    plot_df, x="体積", y="高さ", 
+                    trendline="ols", 
+                    trendline_options=dict(log_x=True, log_y=True)
                 )
                 
-                # プロットの点と線の設定
+                # 3. 近似曲線のデータをメインのグラフに追加
+                trendline = trend_fig.data[1]
+                trendline.line.color = "rgba(100, 100, 100, 0.8)" # 目立ちすぎないグレー
+                trendline.name = "全体近似曲線"
+                fig.add_trace(trendline)
+
+                # 点のサイズ調整
                 fig.update_traces(
-                    marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white'))
+                    marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white')),
+                    selector=dict(mode='markers')
                 )
                 
                 # レイアウト設定
@@ -76,10 +86,6 @@ def main():
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
-                
-                # 近似曲線の詳細（R2値など）を表示したい場合は以下のコメントを外す
-                # results = px.get_trendline_results(fig)
-                # st.write(results.px_fit_results.iloc[0].summary())
                 
             else:
                 st.warning("プロットに必要な数値データが不足しています。")
