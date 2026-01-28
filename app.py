@@ -23,7 +23,6 @@ def main():
             ]
             
             # Excel読み込み
-            # dtype=objectを指定することで、勝手に数値変換してエラーになるのを防ぎます
             df_raw = pd.read_excel(
                 uploaded_file, 
                 sheet_name="製品一覧", 
@@ -46,4 +45,4 @@ def main():
             st.warning("シート名が『製品一覧』であること、指定の列が存在することを確認してください。")
 
 if __name__ == "__main__":
-    main()main()main()
+    main()
