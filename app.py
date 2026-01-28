@@ -53,7 +53,7 @@ def main():
             
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>充填機</div>", unsafe_allow_html=True)
-            with c2: i_machine = st.selectbox("機", ["通常", "FR"], label_visibility="collapsed")
+            with c2: i_machine = st.selectbox("機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
             
             submit = st.form_submit_button("計算実行", use_container_width=True)
 
