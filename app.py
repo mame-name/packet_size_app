@@ -39,7 +39,7 @@ def main():
 
             i_w = input_row("重量", "g")
             i_sg = input_row("比重", "0.000")
-            i_width = input_row("巾", "折り返し")
+            i_width = input_row("巾", "折り返し巾")
             i_length = input_row("長さ", is_number=True)
             
             c1, c2 = st.columns([1, 2])
@@ -62,7 +62,7 @@ def main():
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>""", unsafe_allow_html=True)
-                else: result_container.error("正の数値を入力")
+                else: result_container.error("すべての項目を入力")
             except ValueError: result_container.error("入力エラー")
 
     st.markdown("<h1 style='text-align: center;'>🤖 🤖 🤖 小袋サイズ確認 🤖 🤖 🤖</h1>", unsafe_allow_html=True)
