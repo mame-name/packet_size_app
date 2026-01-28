@@ -9,7 +9,7 @@ from calc import process_product_data
 # ==========================================
 LINE_WIDTH = 1           # 近似曲線の太さ
 MARKER_SIZE = 6          # 実績データのプロットサイズ
-SIM_MARKER_SIZE = 10     # シミュレーション結果（星）のサイズ
+SIM_MARKER_SIZE = 15     # シミュレーション結果（星）のサイズ
 PLOT_OPACITY = 0.8       # プロットの透明度
 # ==========================================
 
@@ -88,6 +88,7 @@ def main():
     st.markdown("<h1 style='text-align: center;'>🤖 🤖 小袋確認 🤖 🤖</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で小袋のサイズを出してくれるアプリです</p>", unsafe_allow_html=True)
     st.markdown("---")
+
     if uploaded_file:
         try:
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
@@ -103,7 +104,6 @@ def main():
                 fig = px.scatter(
                     plot_df, x="体積", y="高さ", color="充填機",
                     hover_name="名前", color_discrete_sequence=custom_colors,
-                    range_x=[0, 0.04], range_y=[0, 10],
                     labels={"体積": "体積", "高さ": "高さ"}
                 )
 
@@ -124,41 +124,29 @@ def main():
                     fig.add_trace(go.Scatter(
                         x=[sim_data["vol"]], y=[sim_data["height"]],
                         mode='markers',
-                        marker=dict(
-                            symbol='star', 
-                            size=SIM_MARKER_SIZE,
-                            color='red', 
-                            line=dict(width=1.5, color='black')
-                        ),
-                        name='シミュレーション結果',
-                        showlegend=True
+                        marker=dict(symbol='star', size=SIM_MARKER_SIZE, color='red', line=dict(width=1.5, color='black')),
+                        name='シミュレーション結果'
                     ))
 
-                # --- 軸の負数表示防止と凡例の下部配置 ---
+                # --- 【重要】ズームアウトしても負を表示させない設定 ---
+                fig.update_xaxes(rangemode="tozero", range=[0, 0.04], constrain="domain")
+                fig.update_yaxes(rangemode="tozero", range=[0, 10], constrain="domain")
+
                 fig.update_layout(
-                    xaxis=dict(
-                        tickformat=".3f",
-                        rangemode="nonnegative", # 0以下を表示しない
-                        range=[0, 0.04]           # 初期表示範囲
-                    ), 
-                    yaxis=dict(
-                        dtick=1,
-                        rangemode="nonnegative", # 0以下を表示しない
-                        range=[0, 10]            # 初期表示範囲
-                    ), 
                     height=700,
                     legend=dict(
-                        orientation="h",   # 凡例を水平に
+                        orientation="h",
                         yanchor="top",
-                        y=-0.12,           # グラフの下に配置
+                        y=-0.12,
                         xanchor="center",
                         x=0.5
-                    )
+                    ),
+                    # ダブルクリックでリセットした時に負にいかないようにする
+                    xaxis_autorange=False,
+                    yaxis_autorange=False
                 )
+                
                 st.plotly_chart(fig, use_container_width=True)
-            
-            st.subheader("📋 抽出データ詳細")
-            st.dataframe(df_final, use_container_width=True)
             
             st.subheader("📋 抽出データ詳細")
             st.dataframe(df_final, use_container_width=True)
