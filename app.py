@@ -12,11 +12,11 @@ PLOT_OPACITY = 0.8
 
 st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ")
 
-# カスタムCSS: ラベルと入力の余白を詰め、コンパクトにする
+# カスタムCSS: コンパクト化
 st.markdown("""
     <style>
     [data-testid="stSidebar"] .stForm { border: none; padding: 0; }
-    [data-testid="stSidebar"] .element-container { margin-bottom: -10px; }
+    [data-testid="stSidebar"] .element-container { margin-bottom: -5px; }
     [data-testid="stSidebar"] label { font-size: 0.85rem !important; }
     </style>
     """, unsafe_allow_html=True)
@@ -31,22 +31,8 @@ def main():
         
         st.divider()
 
-        # --- シミュレーション結果表示エリア（入力欄の上に配置） ---
-        # セッション状態を使って、計算結果を保持・表示します
-        if 'sim_res' not in st.session_state:
-            st.session_state.sim_res = None
-
-        if st.session_state.sim_res:
-            res = st.session_state.sim_res
-            st.markdown(f"""
-            <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
-                <span style="font-size:0.75rem; color:#666;">最新の計算結果</span><br>
-                <span style="font-size:0.9rem;">高さ: <b>{res['height']:.2f}</b></span> / 
-                <span style="font-size:0.9rem;">体積: <b>{res['vol']:.4f}</b></span>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.caption("シミュレーション結果がここに表示されます")
+        # 結果表示用のプレースホルダーを先に作成
+        result_container = st.container()
 
         # 2. パラメータ入力
         with st.form("sim_form"):
@@ -71,6 +57,8 @@ def main():
             
             submit = st.form_submit_button("計算実行", use_container_width=True)
 
+        # 計算処理と結果表示
+        sim_data = None
         if submit:
             try:
                 w_v = float(i_w) if i_w else 0.0
@@ -82,64 +70,79 @@ def main():
                     area = (wd_v - 10) * ln_v if "FR" in i_machine else (wd_v - 8) * ln_v
                     vol = w_v / s_v
                     height = (vol / area) * 1000000 * 1.9
-                    st.session_state.sim_res = {"vol": vol, "height": height}
-                    st.rerun() # 結果を上に表示するために再描画
+                    sim_data = {"vol": vol, "height": height}
+                    
+                    # フォームより上のコンテナに結果を書き込む
+                    result_container.markdown(f"""
+                    <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
+                        <span style="font-size:0.75rem; color:#666;">最新の計算結果</span><br>
+                        <span style="font-size:0.9rem;">高さ: <b>{height:.2f}</b></span> / 
+                        <span style="font-size:0.9rem;">体積: <b>{vol:.4f}</b></span>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.error("数値を入力してください")
+                    result_container.error("数値を入力してください")
             except ValueError:
-                st.error("入力エラー")
+                result_container.error("入力エラー")
+        else:
+            result_container.caption("結果がここに表示されます")
 
     # --- 右側：メインパネル ---
     st.title("📊 解析パネル")
 
-    df_final = None
     if uploaded_file:
         try:
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
             col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ"]
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
-        except Exception as e:
-            st.error(f"Excel解析エラー: {e}")
-
-    if df_final is not None:
-        plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
-        plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
-
-        if not plot_df.empty:
-            custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
-            fig = px.scatter(
-                plot_df, x="体積", y="高さ", color="充填機",
-                hover_name="名前", color_discrete_sequence=custom_colors,
-                range_x=[0, 0.04], range_y=[0, 10],
-                labels={"体積": "体積", "高さ": "高さ"}
-            )
-
-            def add_trend(y_col, name, color):
-                temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
-                trend = temp_fig.data[1]
-                trend.name = name
-                trend.line.color = color
-                trend.line.width = LINE_WIDTH
-                fig.add_trace(trend)
-
-            add_trend("高さ", "全体平均", "DarkSlateGrey")
-            add_trend("上限高", "上限目安", "Orange")
-            add_trend("下限高", "下限目安", "DeepPink")
-
-            if st.session_state.sim_res:
-                s_res = st.session_state.sim_res
-                fig.add_trace(go.Scatter(
-                    x=[s_res["vol"]], y=[s_res["height"]],
-                    mode='markers+text',
-                    marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
-                    name='現在値',
-                    text=["★"], textposition="top center"
-                ))
-
-            fig.update_traces(marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), selector=dict(mode='markers'))
-            fig.update_layout(xaxis=dict(tickformat=".3f"), yaxis=dict(dtick=1), height=700)
-            st.plotly_chart(fig, use_container_width=True)
             
-        st.subheader("📋 抽出データ詳細")
-        st.dataframe(df_final, use_container_width=True)
+            # グラフ表示
+            plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
+            plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
+
+            if not plot_df.empty:
+                custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
+                fig = px.scatter(
+                    plot_df, x="体積", y="高さ", color="充填機",
+                    hover_name="名前", color_discrete_sequence=custom_colors,
+                    range_x=[0, 0.04], range_y=[0, 10],
+                    labels={"体積": "体積", "高さ": "高さ"}
+                )
+
+                def add_trend(y_col, name, color):
+                    # 全データに対して1本のトレンドラインを計算
+                    temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
+                    trend = temp_fig.data[1]
+                    trend.name = name
+                    trend.line.color = color
+                    trend.line.width = LINE_WIDTH
+                    fig.add_trace(trend)
+
+                add_trend("高さ", "全体平均", "DarkSlateGrey")
+                add_trend("上限高", "上限目安", "Orange")
+                add_trend("下限高", "下限目安", "DeepPink")
+
+                # ★のプロット
+                if sim_data:
+                    fig.add_trace(go.Scatter(
+                        x=[sim_data["vol"]], y=[sim_data["height"]],
+                        mode='markers+text',
+                        marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
+                        name='現在値', text=["★"], textposition="top center"
+                    ))
+
+                fig.update_traces(marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white')), selector=dict(mode='markers'))
+                fig.update_layout(xaxis=dict(tickformat=".3f"), yaxis=dict(dtick=1), height=700)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.subheader("📋 抽出データ詳細")
+            st.dataframe(df_final, use_container_width=True)
+
+        except Exception as e:
+            st.error(f"エラーが発生しました: {e}")
+    else:
+        st.warning("左側のメニューからファイルをアップロードしてください。")
+
+if __name__ == "__main__":
+    main()
