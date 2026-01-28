@@ -86,7 +86,7 @@ def main():
 
     # --- 右側：メインパネル ---
     st.markdown("<h1 style='text-align: center;'>🤖 🤖 小袋確認 🤖 🤖</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で仕込量を計算してくれるアプリです</p>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で小袋のサイズを出してくれるアプリです</p>", unsafe_allow_html=True)
     st.markdown("---")
     if uploaded_file:
         try:
