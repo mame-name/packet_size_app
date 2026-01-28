@@ -22,16 +22,12 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def main():
-    # --- 左側：固定入力エリア (サイドバー) ---
     with st.sidebar:
         st.caption("📦 小袋サイズ適正化")
-        
-        # 1. エクセル解析
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
-        
         st.divider()
 
-        # 結果表示用のプレースホルダーを先に作成
+        # 結果表示用のプレースホルダー
         result_container = st.container()
 
         # 2. パラメータ入力
@@ -52,12 +48,12 @@ def main():
             i_length = input_row("長さ", is_number=True)
             
             c1, c2 = st.columns([1, 2])
-            with c1: st.markdown("<div style='padding-top:8px;'>充填機</div>", unsafe_allow_html=True)
+            with c1: st.markdown("<div style='padding-top:8px;'>機</div>", unsafe_allow_html=True)
             with c2: i_machine = st.selectbox("機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
             
             submit = st.form_submit_button("計算実行", use_container_width=True)
 
-        # 計算処理と結果表示
+        # --- 指定された計算ロジックの適用 ---
         sim_data = None
         if submit:
             try:
@@ -67,21 +63,29 @@ def main():
                 ln_v = float(i_length)
                 
                 if wd_v > 0 and ln_v > 0 and s_v > 0:
-                    area = (wd_v - 10) * ln_v if "FR" in i_machine else (wd_v - 8) * ln_v
-                    vol = w_v / s_v
-                    height = (vol / area) * 1000000 * 1.9
-                    sim_data = {"vol": vol, "height": height}
+                    # 1. 面積の計算
+                    if i_machine == "FR-1/5":
+                        sim_area = (wd_v - 10) * ln_v
+                    else: # ZERO-1
+                        sim_area = (wd_v - 8) * ln_v
                     
-                    # フォームより上のコンテナに結果を書き込む
+                    # 2. 体積の計算 (重量 / 1000 / 比重)
+                    sim_vol = w_v / 1000 / s_v
+                    
+                    # 3. 高さの計算 (体積 / 面積 * 1000000 * 1.9)
+                    sim_height = (sim_vol / sim_area) * 1000000 * 1.9
+                    
+                    sim_data = {"vol": sim_vol, "height": sim_height}
+                    
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
-                        <span style="font-size:0.75rem; color:#666;">最新の計算結果</span><br>
-                        <span style="font-size:0.9rem;">高さ: <b>{height:.2f}</b></span> / 
-                        <span style="font-size:0.9rem;">体積: <b>{vol:.4f}</b></span>
+                        <span style="font-size:0.75rem; color:#666;">最新の計算結果 ({i_machine})</span><br>
+                        <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
+                        <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>
                     """, unsafe_allow_html=True)
                 else:
-                    result_container.error("数値を入力してください")
+                    result_container.error("正の数値を入力してください")
             except ValueError:
                 result_container.error("入力エラー")
         else:
@@ -97,7 +101,6 @@ def main():
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
             
-            # グラフ表示
             plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
             plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
 
@@ -111,7 +114,6 @@ def main():
                 )
 
                 def add_trend(y_col, name, color):
-                    # 全データに対して1本のトレンドラインを計算
                     temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
                     trend = temp_fig.data[1]
                     trend.name = name
@@ -123,7 +125,6 @@ def main():
                 add_trend("上限高", "上限目安", "Orange")
                 add_trend("下限高", "下限目安", "DeepPink")
 
-                # ★のプロット
                 if sim_data:
                     fig.add_trace(go.Scatter(
                         x=[sim_data["vol"]], y=[sim_data["height"]],
