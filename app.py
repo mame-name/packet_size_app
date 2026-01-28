@@ -1,21 +1,30 @@
-import pandas as pd
 import streamlit as st
+import pandas as pd
+from calc import process_product_data  # calcから関数を呼び出す
 
-def load_xlsm_data(file):
-    try:
-        # xlsmファイルを読み込み（engine='openpyxl'が必要）
-        # data_only=Trueにしたい場合は、内部でopenpyxlを直接呼ぶ必要がありますが、
-        # pandas経由でも通常の値は取得可能です。
-        df = pd.read_excel(file, engine='openpyxl', sheet_name=0) # 最初のシート
-        return df
-    except Exception as e:
-        st.error(f"読み込みエラー: {e}")
-        return None
+def main():
+    st.title("小袋サイズ適正化アプリ")
+    
+    uploaded_file = st.file_uploader("実績XLSMをアップロード", type=['xlsm'])
+    
+    if uploaded_file:
+        # 読み込み（インデックスで列を指定）
+        target_indices = [0, 1, 5, 6, 9, 15, 17, 18, 25, 26]
+        col_names = ["製品コード", "名前", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ"]
+        
+        df_raw = pd.read_excel(
+            uploaded_file, 
+            sheet_name="製品一覧", 
+            usecols=target_indices, 
+            names=col_names, # 読み込み時に名前をつけて独立させる
+            engine='openpyxl'
+        )
+        
+        # calc側の関数を呼び出して「分割・加工」を実行
+        df_final = process_product_data(df_raw)
+        
+        st.write("### 処理結果データ")
+        st.dataframe(df_final)
 
-# App部分の修正
-uploaded_file = st.file_uploader("実績XLSMをアップロード", type=['xlsm'])
-if uploaded_file:
-    df = load_xlsm_data(uploaded_file)
-    if df is not None:
-        st.success("データの取り込みに成功しました！")
-        # ここから先のバッチサイズ計算へ渡す
+if __name__ == "__main__":
+    main()
