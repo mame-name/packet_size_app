@@ -12,53 +12,79 @@ PLOT_OPACITY = 0.8
 
 st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ")
 
+# ラベルと入力を横並びにするためのカスタムCSS
+st.markdown("""
+    <style>
+    [data-testid="stSidebar"] .stForm > div { border: none; padding: 0; }
+    [data-testid="stSidebar"] .row-widget.stHorizontal { gap: 0.5rem; }
+    /* ラベルのフォントサイズを少し小さく */
+    [data-testid="stSidebar"] label { font-size: 0.9rem !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
 def main():
     # --- 左側：固定入力エリア (サイドバー) ---
     with st.sidebar:
-        st.title("📥 入力・シミュレーション")
+        st.caption("📦 小袋サイズ適正化")
         
-        st.subheader("1. エクセル解析")
-        uploaded_file = st.file_uploader("実績XLSMをアップロード", type=['xlsm'])
+        # 1. エクセル解析（コンパクトに）
+        uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
         
         st.divider()
         
-        st.subheader("2. パラメータ入力")
+        # 2. パラメータ入力（1行ずつ横並びに配置）
         with st.form("sim_form"):
-            input_w = st.text_input("重量", placeholder="単位：g")
-            input_sg = st.text_input("比重", placeholder="0.000")
-            input_width = st.text_input("巾", placeholder="折り返し巾")
-            input_length = st.number_input("長さ (mm)", value=0, step=5)
-            input_machine = st.selectbox("充填機", ["通常機", "FR機"])
-            
-            submit = st.form_submit_button("シミュレーション実行")
+            def input_row(label, placeholder=None, is_number=False):
+                c1, c2 = st.columns([1, 2])
+                with c1:
+                    st.markdown(f"<div style='padding-top:10px;'>{label}</div>", unsafe_allow_html=True)
+                with c2:
+                    if is_number:
+                        return st.number_input(label, value=0, step=5, label_visibility="collapsed")
+                    else:
+                        return st.text_input(label, placeholder=placeholder, label_visibility="collapsed")
 
-        # --- シミュレーション結果の表示（左側） ---
-        sim_data = None # グラフ描画用に保持
+            i_w = input_row("重量", "単位：g")
+            i_sg = input_row("比重", "0.000")
+            i_width = input_row("巾", "折り返し")
+            i_length = input_row("長さ", is_number=True)
+            
+            c1, c2 = st.columns([1, 2])
+            with c1: st.markdown("<div style='padding-top:10px;'>充填機</div>", unsafe_allow_html=True)
+            with c2: i_machine = st.selectbox("機", ["通常", "FR"], label_visibility="collapsed")
+            
+            submit = st.form_submit_button("計算実行", use_container_width=True)
+
+        # --- シミュレーション結果の表示（コンパクト版） ---
+        sim_data = None
         if submit:
             try:
-                w_val = float(input_w) if input_w else 0.0
-                sg_val = float(input_sg) if input_sg else 0.0
-                width_val = float(input_width) if input_width else 0.0
-                length_val = float(input_length)
+                w_val = float(i_w) if i_w else 0.0
+                sg_val = float(i_sg) if i_sg else 0.0
+                width_val = float(i_width) if i_width else 0.0
+                length_val = float(i_length)
                 
                 if width_val > 0 and length_val > 0 and sg_val > 0:
-                    sim_area = (width_val - 10) * length_val if "FR" in input_machine else (width_val - 8) * length_val
+                    sim_area = (width_val - 10) * length_val if "FR" in i_machine else (width_val - 8) * length_val
                     sim_vol = w_val / sg_val
                     sim_height = (sim_vol / sim_area) * 1000000 * 1.9
                     
                     sim_data = {"vol": sim_vol, "height": sim_height}
                     
-                    # サイドバーに結果を表示
-                    st.success("✅ 計算完了")
-                    st.metric("算出された高さ", f"{sim_height:.2f}")
-                    st.metric("算出された体積", f"{sim_vol:.4f}")
+                    st.markdown(f"""
+                    <div style="background-color:#f0f2f6; padding:10px; border-radius:5px; margin-top:10px;">
+                        <span style="font-size:0.8rem; color:#555;">結果</span><br>
+                        <b>高さ: {sim_height:.2f}</b><br>
+                        <b>体積: {sim_vol:.4f}</b>
+                    </div>
+                    """, unsafe_allow_html=True)
                 else:
-                    st.warning("各項目に正の数値を入力してください。")
+                    st.caption("⚠️ 数値を確認してください")
             except ValueError:
-                st.error("数値入力に誤りがあります。")
+                st.caption("⚠️ 数値エラー")
 
-    # --- 右側：解析結果表示エリア (メインパネル) ---
-    st.title("📊 解析・可視化パネル")
+    # --- 右側：メインパネル ---
+    st.title("📊 解析パネル")
 
     df_final = None
     if uploaded_file:
@@ -71,8 +97,6 @@ def main():
             st.error(f"Excel解析エラー: {e}")
 
     if df_final is not None:
-        st.subheader("📉 相関プロット（全体近似曲線付き）")
-        
         plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
         plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
 
@@ -97,14 +121,13 @@ def main():
             add_trend("上限高", "上限目安", "Orange")
             add_trend("下限高", "下限目安", "DeepPink")
 
-            # 左側で計算された「★」をグラフに追加
             if sim_data:
                 fig.add_trace(go.Scatter(
                     x=[sim_data["vol"]], y=[sim_data["height"]],
                     mode='markers+text',
                     marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
-                    name='シミュレーション位置',
-                    text=["★現在値"], textposition="top center"
+                    name='現在値',
+                    text=["★"], textposition="top center"
                 ))
 
             fig.update_traces(marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), selector=dict(mode='markers'))
@@ -114,7 +137,7 @@ def main():
         st.subheader("📋 抽出データ詳細")
         st.dataframe(df_final, use_container_width=True)
     else:
-        st.warning("左側のメニューから実績ファイルをアップロードしてください。")
+        st.warning("左側のメニューからファイルをアップロードしてください。")
 
 if __name__ == "__main__":
     main()
