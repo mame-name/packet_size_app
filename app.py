@@ -42,8 +42,9 @@ def main():
             plot_df = df_final.dropna(subset=['体積', '高さ'])
             
             if not plot_df.empty:
-                # カスタムカラーパレットの設定（オレンジ、黄緑、水色）
-                custom_colors = ["#FF8C00", "#7CFC00", "#00BFFF"]
+                # カスタムカラーパレットの設定（薄紫、黄緑、水色）
+                # 今後「赤」を強調用に残すため、それ以外の色を採用
+                custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
                 
                 fig = px.scatter(
                     plot_df,
@@ -52,7 +53,7 @@ def main():
                     hover_name="名前",
                     hover_data=["製品コード", "充填機", "製品サイズ", "重量"],
                     color="充填機",
-                    color_discrete_sequence=custom_colors, # 指定色を適用
+                    color_discrete_sequence=custom_colors, 
                     labels={"体積": "体積 (重量/比重)", "高さ": "高さ (計算値)"},
                     range_x=[0, 0.04], 
                     range_y=[0, 10]
