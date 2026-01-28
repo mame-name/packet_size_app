@@ -9,7 +9,7 @@ from calc import process_product_data
 # ==========================================
 LINE_WIDTH = 1           # 近似曲線の太さ
 MARKER_SIZE = 6          # 実績データのプロットサイズ
-SIM_MARKER_SIZE = 18     # シミュレーション結果（星）のサイズ
+SIM_MARKER_SIZE = 10     # シミュレーション結果（星）のサイズ
 PLOT_OPACITY = 0.8       # プロットの透明度
 # ==========================================
 
