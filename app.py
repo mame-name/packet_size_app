@@ -57,4 +57,4 @@ def main():
             st.warning("シート名が『製品一覧』であること、指定の列が存在することを確認してください。")
 
 if __name__ == "__main__":
-    main()main()
+    main()
