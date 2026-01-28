@@ -27,12 +27,12 @@ def main():
             # 重量・比重・巾はボタンなしのテキスト入力（プレースホルダー付き）
             input_w = st.text_input("重量", placeholder="単位：g")
             input_sg = st.text_input("比重", placeholder="0.000")
-            input_width = st.text_input("巾", placeholder="折り返し巾")
+            input_width = st.text_input("巾", placeholder="折返し巾・単位：mm")
             
             # 長さのみ +/- ボタン付き、5単位で動く設定
-            input_length = st.number_input("長さ (mm)", value=0, step=5)
+            input_length = st.number_input("長さ (mm)", placeholder="単位：mm", value=0, step=5)
             
-            input_machine = st.selectbox("充填機", ["通常機", "FR機"])
+            input_machine = st.selectbox("充填機", ["ZERO-1", "FR-1/5"])
             
             submit = st.form_submit_button("シミュレーション実行")
 
