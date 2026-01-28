@@ -37,14 +37,14 @@ def main():
                     if is_number: return st.number_input(label, value=0, step=5, label_visibility="collapsed")
                     else: return st.text_input(label, placeholder=placeholder, label_visibility="collapsed")
 
-            i_w = input_row("重量", "g")
-            i_sg = input_row("比重", "0.000")
-            i_width = input_row("巾", "折返し巾")
-            i_length = input_row("長さ", is_number=True)
+            i_w = input_row("　　重量", "g")
+            i_sg = input_row("　　比重", "0.000")
+            i_width = input_row("　　巾", "折返し巾")
+            i_length = input_row("　　長さ", is_number=True)
             
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>機</div>", unsafe_allow_html=True)
-            with c2: i_machine = st.selectbox("機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
+            with c2: i_machine = st.selectbox("　　充填機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
             
             submit = st.form_submit_button("計算実行", use_container_width=True)
 
