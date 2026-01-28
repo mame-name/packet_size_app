@@ -10,12 +10,10 @@ MARKER_SIZE = 6
 PLOT_OPACITY = 0.8
 # ------------------------------
 
-# 画面全体のレイアウト設定
 st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ")
 
 def main():
-    # --- 左側：固定入力エリア (サイドバー) ---
-    # 比率的に30%程度を占め、メイン画面のスクロールに影響されません
+    # --- 左側：固定入力エリア (サイドバー 約3:7の比率で固定されます) ---
     with st.sidebar:
         st.title("📥 入力・設定")
         
@@ -26,16 +24,19 @@ def main():
         
         st.subheader("2. シミュレーション")
         with st.form("sim_form"):
-            input_w = st.number_input("重量 (g)", value=0.0, format="%.2f")
-            input_sg = st.number_input("比重", value=1.0, format="%.3f")
-            input_width = st.number_input("巾 (mm)", value=0)
-            input_length = st.number_input("長さ (mm)", value=0)
+            # 重量・比重・巾はボタンなしのテキスト入力（プレースホルダー付き）
+            input_w = st.text_input("重量", placeholder="単位：g")
+            input_sg = st.text_input("比重", placeholder="0.000")
+            input_width = st.text_input("巾", placeholder="折り返し巾")
+            
+            # 長さのみ +/- ボタン付き、5単位で動く設定
+            input_length = st.number_input("長さ (mm)", value=0, step=5)
+            
             input_machine = st.selectbox("充填機", ["通常機", "FR機"])
             
             submit = st.form_submit_button("シミュレーション実行")
 
-    # --- 右側：解析結果表示エリア (メインパネル) ---
-    # ここはデータ量が増えると縦にスクロールします
+    # --- 右側：解析結果表示エリア (メインパネル / スクロール可能) ---
     st.title("📊 解析・シミュレーション結果")
 
     df_final = None
@@ -48,9 +49,7 @@ def main():
         except Exception as e:
             st.error(f"Excel解析エラー: {e}")
 
-    # メインコンテンツの描画
     if df_final is not None:
-        # グラフセクション
         st.subheader("📉 相関プロット（全体近似曲線付き）")
         
         plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
@@ -65,7 +64,7 @@ def main():
                 labels={"体積": "体積", "高さ": "高さ"}
             )
 
-            # 近似曲線を追加
+            # 近似曲線追加関数
             def add_trend(y_col, name, color):
                 temp_fig = px.scatter(plot_df, x="体積", y=y_col, trendline="ols", trendline_options=dict(log_x=True, log_y=True))
                 trend = temp_fig.data[1]
@@ -78,26 +77,38 @@ def main():
             add_trend("上限高", "上限目安", "Orange")
             add_trend("下限高", "下限目安", "DeepPink")
 
-            # シミュレーション点の追加
-            if submit and input_width > 0 and input_length > 0:
-                sim_area = (input_width - 10) * input_length if "FR" in input_machine else (input_width - 8) * input_length
-                sim_vol = input_w / input_sg if input_sg > 0 else 0
-                sim_height = (sim_vol / sim_area) * 1000000 * 1.9 if sim_area > 0 else 0
-                
-                fig.add_trace(go.Scatter(
-                    x=[sim_vol], y=[sim_height],
-                    mode='markers+text',
-                    marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
-                    name='シミュレーション結果',
-                    text=["★現在値"], textposition="top center"
-                ))
-                st.info(f"💡 シミュレーション結果 → 高さ: **{sim_height:.2f}** / 体積: **{sim_vol:.4f}**")
+            # シミュレーション値の反映
+            if submit:
+                try:
+                    # テキスト入力値を数値に変換
+                    w_val = float(input_w) if input_w else 0.0
+                    sg_val = float(input_sg) if input_sg else 0.0
+                    width_val = float(input_width) if input_width else 0.0
+                    length_val = float(input_length) # number_inputなのでそのまま数値
+                    
+                    if width_val > 0 and length_val > 0 and sg_val > 0:
+                        sim_area = (width_val - 10) * length_val if "FR" in input_machine else (width_val - 8) * length_val
+                        sim_vol = w_val / sg_val
+                        sim_height = (sim_vol / sim_area) * 1000000 * 1.9
+                        
+                        # グラフに★を追加
+                        fig.add_trace(go.Scatter(
+                            x=[sim_vol], y=[sim_height],
+                            mode='markers+text',
+                            marker=dict(symbol='star', size=18, color='red', line=dict(width=2, color='black')),
+                            name='シミュレーション結果',
+                            text=["★現在値"], textposition="top center"
+                        ))
+                        st.info(f"💡 シミュレーション結果 → 高さ: **{sim_height:.2f}** / 体積: **{sim_vol:.4f}**")
+                    else:
+                        st.warning("各項目に0より大きい数値を入力してください。")
+                except ValueError:
+                    st.warning("数値として正しくない入力があります。")
 
             fig.update_traces(marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), selector=dict(mode='markers'))
             fig.update_layout(xaxis=dict(tickformat=".3f"), yaxis=dict(dtick=1), height=700)
             st.plotly_chart(fig, use_container_width=True)
             
-        # テーブルセクション
         st.subheader("📋 抽出データ詳細")
         st.dataframe(df_final, use_container_width=True)
     else:
