@@ -65,7 +65,7 @@ def main():
                 else: result_container.error("正の数値を入力")
             except ValueError: result_container.error("入力エラー")
 
-    st.markdown("<h1 style='text-align: center;'>🤖 🤖 小袋確認 🤖 🤖</h1>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>🤖 🤖 小袋サイズ確認 🤖 🤖</h1>", unsafe_allow_html=True)
     st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で小袋のサイズを出してくれるアプリです</p>", unsafe_allow_html=True)
     st.markdown("---")
 
