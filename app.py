@@ -27,7 +27,6 @@ st.markdown("""
 def main():
     # --- 左側：固定入力エリア (サイドバー) ---
     with st.sidebar:
-        st.caption("📦 小袋サイズ適正化")
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
         st.divider()
 
@@ -86,8 +85,8 @@ def main():
             result_container.caption("結果がここに表示されます")
 
     # --- 右側：メインパネル ---
-    st.title("📊 解析パネル")
-
+    st.title("📦 小袋サイズ適正化")
+    st.caption("📊 解析パネル")
     if uploaded_file:
         try:
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
