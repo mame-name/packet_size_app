@@ -8,7 +8,7 @@ st.set_page_config(layout="wide", page_title="小袋サイズ適正化アプリ"
 
 def main():
     st.title("📦 製品リスト抽出・分析ツール")
-    st.info("製品一覧からデータを抽出し、体積(MAX 0.04)と高さ(MAX 10)の範囲でプロットします。")
+    st.info("製品一覧からデータを抽出し、体積と高さの相関および累乗近似曲線を表示します。")
 
     uploaded_file = st.file_uploader("実績XLSMファイルをアップロードしてください", type=['xlsm'])
     
@@ -36,16 +36,18 @@ def main():
             df_final = process_product_data(df_raw)
             
             # --- グラフ表示エリア ---
-            st.subheader("📊 体積 vs 高さ 相関プロット (固定スケール)")
+            st.subheader("📊 体積 vs 高さ 相関プロット（累乗近似曲線付き）")
             
-            # 数値があるデータのみでプロット
+            # 数値があるデータのみでプロット（近似計算のため0以下の値も除外）
             plot_df = df_final.dropna(subset=['体積', '高さ'])
+            plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)]
             
             if not plot_df.empty:
-                # カスタムカラーパレットの設定（薄紫、黄緑、水色）
-                # 今後「赤」を強調用に残すため、それ以外の色を採用
+                # カスタムカラー（薄紫、黄緑、水色）
                 custom_colors = ["#DDA0DD", "#7CFC00", "#00BFFF"]
                 
+                # trendline="ols" で対数軸を利用した累乗近似をシミュレート
+                # ※Plotly Expressで直接「累乗」を指定する際は、対数変換を伴う最小二乗法を用います
                 fig = px.scatter(
                     plot_df,
                     x="体積",
@@ -53,19 +55,17 @@ def main():
                     hover_name="名前",
                     hover_data=["製品コード", "充填機", "製品サイズ", "重量"],
                     color="充填機",
-                    color_discrete_sequence=custom_colors, 
+                    color_discrete_sequence=custom_colors,
                     labels={"体積": "体積 (重量/比重)", "高さ": "高さ (計算値)"},
                     range_x=[0, 0.04], 
-                    range_y=[0, 10]
+                    range_y=[0, 10],
+                    trendline="ols",             # 近似曲線を追加
+                    trendline_options=dict(log_x=True, log_y=True) # 累乗近似(y=ax^b)の設定
                 )
                 
-                # プロットの点を小さく設定 (size=6)
+                # プロットの点と線の設定
                 fig.update_traces(
-                    marker=dict(
-                        size=6, 
-                        opacity=0.8, 
-                        line=dict(width=0.5, color='white')
-                    )
+                    marker=dict(size=6, opacity=0.8, line=dict(width=0.5, color='white'))
                 )
                 
                 # レイアウト設定
@@ -76,16 +76,17 @@ def main():
                 )
                 
                 st.plotly_chart(fig, use_container_width=True)
+                
+                # 近似曲線の詳細（R2値など）を表示したい場合は以下のコメントを外す
+                # results = px.get_trendline_results(fig)
+                # st.write(results.px_fit_results.iloc[0].summary())
+                
             else:
                 st.warning("プロットに必要な数値データが不足しています。")
 
             # --- データテーブル表示 ---
             st.subheader("📋 抽出データ一覧")
             st.dataframe(df_final, use_container_width=True)
-
-            # CSVダウンロード
-            csv = df_final.to_csv(index=False).encode('utf-8-sig')
-            st.download_button("抽出データをCSVで保存", csv, "extracted_data.csv", "text/csv")
 
         except Exception as e:
             st.error(f"エラーが発生しました: {e}")
