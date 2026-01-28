@@ -14,7 +14,7 @@ def main():
     
     if uploaded_file:
         try:
-            # 抽出対象列（A=0, B=1, E=4, F=5, G=6, J=9, P=15, R=17, S=18, Z=25, AA=26）
+            # 抽出対象列（A, B, E, F, G, J, P, R, S, Z, AA）
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
             col_names = [
                 "製品コード", "名前", "充填機", "重量", "入数", 
@@ -32,7 +32,7 @@ def main():
                 dtype=object 
             )
             
-            # ロジック実行
+            # calc.pyのロジック実行
             df_final = process_product_data(df_raw)
             
             # 1. グラフ表示エリア
