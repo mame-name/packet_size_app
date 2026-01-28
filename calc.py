@@ -37,6 +37,6 @@ def process_product_data(df):
             return (w - 8) * l
 
     # 新規列「計算値（面積）」として追加
-    df["計算値"] = df.apply(calculate_custom_value, axis=1)
+    df["面積"] = df.apply(calculate_custom_value, axis=1)
     
     return df
