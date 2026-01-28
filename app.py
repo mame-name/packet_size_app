@@ -99,8 +99,8 @@ def main():
 
                 # --- 【最強の軸固定設定】 ---
                 fig.update_layout(
-                    xaxis=dict(tickformat=".3f", range=[0.02, 0.04], autorange=False, fixedrange=False),
-                    yaxis=dict(dtick=1, range=[1, 11], autorange=False, fixedrange=False),
+                    xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, fixedrange=False),
+                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, fixedrange=False),
                     height=700,
                     legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5),
                     # ズームアウトの限界を制限する（Plotly 5.0+ の機能）
