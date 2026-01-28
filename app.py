@@ -134,25 +134,31 @@ def main():
                         showlegend=True
                     ))
 
-                fig.update_traces(
-                    marker=dict(size=MARKER_SIZE, opacity=PLOT_OPACITY, line=dict(width=0.5, color='white')), 
-                    selector=dict(mode='markers', name=None)
-                )
-                
-                # --- 凡例を下に配置するための設定 ---
+                # --- 軸の負数表示防止と凡例の下部配置 ---
                 fig.update_layout(
-                    xaxis=dict(tickformat=".3f"), 
-                    yaxis=dict(dtick=1), 
+                    xaxis=dict(
+                        tickformat=".3f",
+                        rangemode="nonnegative", # 0以下を表示しない
+                        range=[0, 0.04]           # 初期表示範囲
+                    ), 
+                    yaxis=dict(
+                        dtick=1,
+                        rangemode="nonnegative", # 0以下を表示しない
+                        range=[0, 10]            # 初期表示範囲
+                    ), 
                     height=700,
                     legend=dict(
-                        orientation="h",   # 水平（horizontal）に配置
-                        yanchor="top",     # 凡例の上端を基準にする
-                        y=-0.1,            # グラフの下（負の値）に配置
-                        xanchor="center",  # 凡例の中心を基準にする
-                        x=0.5              # グラフの中央に配置
+                        orientation="h",   # 凡例を水平に
+                        yanchor="top",
+                        y=-0.12,           # グラフの下に配置
+                        xanchor="center",
+                        x=0.5
                     )
                 )
                 st.plotly_chart(fig, use_container_width=True)
+            
+            st.subheader("📋 抽出データ詳細")
+            st.dataframe(df_final, use_container_width=True)
             
             st.subheader("📋 抽出データ詳細")
             st.dataframe(df_final, use_container_width=True)
