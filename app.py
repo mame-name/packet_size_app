@@ -84,7 +84,7 @@ def main():
     if uploaded_file:
         try:
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26, 28]
-            col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ", "シール形状"]
+            col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ", "シール"]
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
             
