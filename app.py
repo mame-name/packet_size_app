@@ -9,7 +9,7 @@ from calc import process_product_data
 # ==========================================
 LINE_WIDTH = 1           
 MARKER_SIZE = 6          
-SIM_MARKER_SIZE = 10     
+SIM_MARKER_SIZE = 15     
 PLOT_OPACITY = 0.8       
 # ==========================================
 
@@ -42,6 +42,12 @@ def main():
             i_width = input_row("　巾", "折返し巾")
             i_length = input_row("　長さ", is_number=True)
             
+            # シール形状の追加
+            c1, c2 = st.columns([1, 2])
+            with c1: st.markdown("<div style='padding-top:8px;'>　シール形状</div>", unsafe_allow_html=True)
+            with c2: i_seal = st.selectbox("　シール形状", ["三方シール", "背貼り"], label_visibility="collapsed")
+
+            # 充填機
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>　充填機</div>", unsafe_allow_html=True)
             with c2: i_machine = st.selectbox("　充填機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
@@ -59,6 +65,7 @@ def main():
                     sim_data = {"vol": sim_vol, "height": sim_height}
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
+                        <span style="font-size:0.75rem; color:#666;">{i_seal} / {i_machine}</span><br>
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>""", unsafe_allow_html=True)
@@ -71,15 +78,20 @@ def main():
 
     if uploaded_file:
         try:
-            target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26]
-            col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ"]
+            # AC列(28)を読み込み対象に追加
+            target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26, 28]
+            col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ", "シール形状"]
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
+            
             plot_df = df_final.dropna(subset=['体積', '高さ', '上限高', '下限高'])
             plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
 
             if not plot_df.empty:
-                fig = px.scatter(plot_df, x="体積", y="高さ", color="充填機", hover_name="名前", 
+                # 色分けは「充填機」のままですが、ホバー時にシール形状が見えるように設定可能
+                fig = px.scatter(plot_df, x="体積", y="高さ", color="充填機", 
+                                 hover_name="名前", 
+                                 hover_data=["シール形状", "製品サイズ"],
                                  color_discrete_sequence=["#DDA0DD", "#7CFC00", "#00BFFF"],
                                  labels={"体積": "体積", "高さ": "高さ"})
 
@@ -97,20 +109,14 @@ def main():
                                              marker=dict(symbol='star', size=SIM_MARKER_SIZE, color='red', line=dict(width=1.5, color='black')),
                                              name='シミュレーション結果'))
 
-                # --- 【最強の軸固定設定】 ---
+                # 軸固定設定
                 fig.update_layout(
-                    xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, fixedrange=False),
-                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, fixedrange=False),
+                    xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, minallowed=0),
+                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, minallowed=0),
                     height=700,
-                    legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5),
-                    # ズームアウトの限界を制限する（Plotly 5.0+ の機能）
-                    xaxis_range=[0, 0.04],
-                    yaxis_range=[0, 10]
+                    legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
                 )
-                # ユーザーが 0 未満にドラッグできないようにする
-                fig.update_xaxes(minallowed=0)
-                fig.update_yaxes(minallowed=0)
-
+                
                 st.plotly_chart(fig, use_container_width=True)
             
             st.subheader("📋 抽出データ詳細")
