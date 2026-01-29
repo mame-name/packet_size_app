@@ -42,12 +42,10 @@ def main():
             i_width = input_row("　巾", "折返し巾")
             i_length = input_row("　長さ", is_number=True)
             
-            # シール
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>　シール</div>", unsafe_allow_html=True)
             with c2: i_seal = st.selectbox("　シール", ["ビン口", "フラット"], label_visibility="collapsed")
 
-            # 充填機
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>　充填機</div>", unsafe_allow_html=True)
             with c2: i_machine = st.selectbox("　充填機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
@@ -59,12 +57,10 @@ def main():
             try:
                 w_v, s_v, wd_v, ln_v = float(i_w or 0), float(i_sg or 0), float(i_width or 0), float(i_length or 0)
                 if wd_v > 0 and ln_v > 0 and s_v > 0:
-                    # シミュレーション用面積計算ロジック (calc.pyと同一)
                     adj_wd = (wd_v - 10) if "FR" in i_machine else (wd_v - 8)
-                    
                     if i_seal == "フラット":
                         sim_area = adj_wd * (ln_v - 15)
-                    else: # ビン口
+                    else: 
                         sim_area = (adj_wd * (ln_v - 24)) + 40
                     
                     sim_vol = w_v / 1000 / s_v
@@ -73,6 +69,7 @@ def main():
 
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
+                        <span style="font-size:0.75rem; color:#666;">{i_seal} / {i_machine}</span><br>
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>""", unsafe_allow_html=True)
@@ -85,9 +82,7 @@ def main():
 
     if uploaded_file:
         try:
-            # AC列(28)を読み込み対象に追加
             target_indices = [0, 1, 4, 5, 6, 9, 15, 17, 18, 25, 26, 28]
-            # 最初から「シール」として読み込む
             col_names = ["製品コード", "名前", "充填機", "重量", "入数", "比重", "外装", "顧客名", "ショット", "粘度", "製品サイズ", "シール"]
             df_raw = pd.read_excel(uploaded_file, sheet_name="製品一覧", usecols=target_indices, names=col_names, skiprows=5, engine='openpyxl', dtype=object)
             df_final = process_product_data(df_raw)
@@ -96,9 +91,17 @@ def main():
             plot_df = plot_df[(plot_df['体積'] > 0) & (plot_df['高さ'] > 0)].copy()
 
             if not plot_df.empty:
+                # hover_dataに「重量」を追加（色の基準である「充填機」の直後に配置）
                 fig = px.scatter(plot_df, x="体積", y="高さ", color="充填機", 
                                  hover_name="名前", 
-                                 hover_data=["シール", "製品サイズ"],
+                                 hover_data={
+                                     "充填機": True,
+                                     "重量": ":.1f",  # 小数点1位まで表示
+                                     "シール": True,
+                                     "製品サイズ": True,
+                                     "体積": ":.4f",
+                                     "高さ": ":.2f"
+                                 },
                                  color_discrete_sequence=["#DDA0DD", "#7CFC00", "#00BFFF"],
                                  labels={"体積": "体積", "高さ": "高さ"})
 
@@ -116,10 +119,9 @@ def main():
                                              marker=dict(symbol='star', size=SIM_MARKER_SIZE, color='red', line=dict(width=1.5, color='black')),
                                              name='シミュレーション結果'))
 
-                # 軸固定・ズーム制限
                 fig.update_layout(
                     xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, minallowed=0),
-                    yaxis=dict(dtick=1, range=[1.5, 12], autorange=False, minallowed=0),
+                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, minallowed=0),
                     height=700,
                     legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
                 )
