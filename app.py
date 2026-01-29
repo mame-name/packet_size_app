@@ -120,7 +120,7 @@ def main():
                 # 軸固定・ズーム制限
                 fig.update_layout(
                     xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, minallowed=0),
-                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, minallowed=0),
+                    yaxis=dict(dtick=1, range=[0, 14], autorange=False, minallowed=0),
                     height=700,
                     legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
                 )
