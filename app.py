@@ -72,8 +72,8 @@ def main():
                 else: result_container.error("すべての項目を入力")
             except ValueError: result_container.error("入力エラー")
 
-    st.markdown("<h1 style='text-align: center;'>Intelligent 熊谷さん<br>🤖 🤖 🤖 仕込量予測 🤖 🤖 🤖</h1>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度で仕込量を計算してくれるアプリです</p>", unsafe_allow_html=True)
+    st.markdown("<h1 style='text-align: center;'>Intelligent 熊谷さん<br>🤖 🤖 🤖 小袋サイズ確認 🤖 🤖 🤖</h1>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: gray;'>まるで熊谷さんが考えたような精度でサイズを確認してくれるアプリです</p>", unsafe_allow_html=True)
     st.markdown("---")
 
     if uploaded_file:
