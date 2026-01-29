@@ -4,16 +4,15 @@ import numpy as np
 def process_product_data(df):
     df = df.copy()
 
-    # 1. 数値型変換
+    # 1. 基本的な型変換
     df['製品サイズ'] = df['製品サイズ'].astype(str).str.strip()
     df['重量'] = pd.to_numeric(df['重量'], errors='coerce')
     df['比重'] = pd.to_numeric(df['比重'], errors='coerce')
-    
-    # シールの名称クリーンアップ
     df['シール'] = df['シール'].astype(str).str.strip()
 
-    # 2. サイズ空欄除外
+    # 2. 必須データの欠損除外
     df = df[~df['製品サイズ'].isin(['nan', 'None', ''])]
+    df = df.dropna(subset=['重量', '比重'])
 
     # 3. 巾・長さ分解
     size_split = df["製品サイズ"].str.split('*', n=1, expand=True)
@@ -25,14 +24,14 @@ def process_product_data(df):
         m = str(row["充填機"])
         w = row["巾"]
         l = row["長さ"]
-        s = str(row["シール"]) 
+        s = str(row["シール"])
 
         if pd.isna(w) or pd.isna(l): return None
         
         # 巾の調整
         adj_w = (w - 10) if "FR" in m else (w - 8)
 
-        # 面積計算ロジック
+        # ロジック適用
         if "フラット" in s:
             area = adj_w * (l - 15)
         elif "ビン口" in s:
@@ -55,7 +54,7 @@ def process_product_data(df):
     
     df["高さ"] = df.apply(calculate_height, axis=1)
 
-    # 7. 上限高・下限高
+    # 7. 上限・下限目安
     df["上限高"] = df["高さ"] + (df["高さ"] / 9)
     df["下限高"] = df["高さ"] - (df["高さ"] / 7)
     
