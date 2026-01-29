@@ -73,7 +73,6 @@ def main():
 
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
-                        <span style="font-size:0.75rem; color:#666;">{i_seal} / {i_machine}</span><br>
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>""", unsafe_allow_html=True)
