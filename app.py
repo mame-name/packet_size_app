@@ -98,7 +98,7 @@ def main():
             if not plot_df.empty:
                 fig = px.scatter(plot_df, x="体積", y="高さ", color="充填機", 
                                  hover_name="名前", 
-                                 hover_data=["シール", "製品サイズ"],
+                                 hover_data=[重量", "シール", "製品サイズ"],
                                  color_discrete_sequence=["#DDA0DD", "#7CFC00", "#00BFFF"],
                                  labels={"体積": "体積", "高さ": "高さ"})
 
