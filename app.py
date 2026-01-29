@@ -73,7 +73,6 @@ def main():
 
                     result_container.markdown(f"""
                     <div style="background-color:#f0f2f6; padding:8px; border-radius:5px; margin-bottom:15px; border-left: 5px solid #00BFFF;">
-                        <span style="font-size:0.75rem; color:#666;">{i_seal} / {i_machine}</span><br>
                         <span style="font-size:0.9rem;">高さ: <b>{sim_height:.2f}</b></span> / 
                         <span style="font-size:0.9rem;">体積: <b>{sim_vol:.4f}</b></span>
                     </div>""", unsafe_allow_html=True)
@@ -120,7 +119,7 @@ def main():
                 # 軸固定・ズーム制限
                 fig.update_layout(
                     xaxis=dict(tickformat=".3f", range=[0, 0.04], autorange=False, minallowed=0),
-                    yaxis=dict(dtick=1, range=[0, 10], autorange=False, minallowed=0),
+                    yaxis=dict(dtick=1, range=[1.5, 12], autorange=False, minallowed=0),
                     height=700,
                     legend=dict(orientation="h", yanchor="top", y=-0.12, xanchor="center", x=0.5)
                 )
