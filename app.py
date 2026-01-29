@@ -44,8 +44,8 @@ def main():
             
             # シール形状の追加
             c1, c2 = st.columns([1, 2])
-            with c1: st.markdown("<div style='padding-top:8px;'>　シール形状</div>", unsafe_allow_html=True)
-            with c2: i_seal = st.selectbox("　シール形状", ["三方シール", "背貼り"], label_visibility="collapsed")
+            with c1: st.markdown("<div style='padding-top:8px;'>　シール</div>", unsafe_allow_html=True)
+            with c2: i_seal = st.selectbox("　シール", ["ビン口", "フラット"], label_visibility="collapsed")
 
             # 充填機
             c1, c2 = st.columns([1, 2])
