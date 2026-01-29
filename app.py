@@ -37,7 +37,7 @@ def main():
                     if is_number: return st.number_input(label, value=0, step=5, label_visibility="collapsed")
                     else: return st.text_input(label, placeholder=placeholder, label_visibility="collapsed")
 
-            i_w = input_row("　重量", "g")
+            i_w = input_row("　重量", is_number=True)
             i_sg = input_row("　比重", "0.000")
             i_width = input_row("　巾", "折返し巾")
             i_length = input_row("　長さ", is_number=True)
