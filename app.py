@@ -24,35 +24,46 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def main():
+    # セッション状態の初期化（クリアボタン用）
+    if 'reset_key' not in st.session_state:
+        st.session_state.reset_key = 0
+
     with st.sidebar:
         st.subheader("📁 実績データ読込")
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
         result_container = st.container()
 
-        with st.form("sim_form"):
-            def input_row(label, placeholder=None, is_number=False):
+        # フォームの代わりにコンテナを使用（クリア機能を有効にするため）
+        with st.container():
+            def input_row(label, key, placeholder=None, is_number=False):
                 c1, c2 = st.columns([1, 2])
                 with c1: st.markdown(f"<div style='padding-top:8px;'>{label}</div>", unsafe_allow_html=True)
                 with c2:
-                    if is_number: return st.number_input(label, value=0, step=5, label_visibility="collapsed")
-                    else: return st.text_input(label, placeholder=placeholder, label_visibility="collapsed")
+                    # キーにreset_keyを混ぜることで、リセット時にまるごと初期化される
+                    unique_key = f"{key}_{st.session_state.reset_key}"
+                    if is_number: return st.number_input(label, value=0, step=5, label_visibility="collapsed", key=unique_key)
+                    else: return st.text_input(label, placeholder=placeholder, label_visibility="collapsed", key=unique_key)
 
-            i_w = input_row("　重量", "g")
-            i_sg = input_row("　比重", "0.000")
-            i_width = input_row("　巾", "折返し巾")
-            i_length = input_row("　長さ", is_number=True)
+            i_w = input_row("　重量", "w", "g")
+            i_sg = input_row("　比重", "sg", "0.000")
+            i_width = input_row("　巾", "wd", "折返し巾")
+            i_length = input_row("　長さ", "ln", is_number=True)
             
             # シール
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>　シール</div>", unsafe_allow_html=True)
-            with c2: i_seal = st.selectbox("　シール", ["ビン口", "フラット"], label_visibility="collapsed")
+            with c2: i_seal = st.selectbox("　シール", ["ビン口", "フラット"], label_visibility="collapsed", key=f"seal_{st.session_state.reset_key}")
 
             # 充填機
             c1, c2 = st.columns([1, 2])
             with c1: st.markdown("<div style='padding-top:8px;'>　充填機</div>", unsafe_allow_html=True)
-            with c2: i_machine = st.selectbox("　充填機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed")
+            with c2: i_machine = st.selectbox("　充填機", ["FR-1/5", "ZERO-1"], label_visibility="collapsed", key=f"mach_{st.session_state.reset_key}")
             
-            submit = st.form_submit_button("計算実行", use_container_width=True)
+            # ボタン配置
+            submit = st.button("計算実行", use_container_width=True, type="primary")
+            if st.button("クリア", use_container_width=True):
+                st.session_state.reset_key += 1
+                st.rerun()
 
         sim_data = None
         if submit:
