@@ -25,6 +25,7 @@ st.markdown("""
 
 def main():
     with st.sidebar:
+        st.subheader("📁 実績データ読込")
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
         st.divider()
         result_container = st.container()
