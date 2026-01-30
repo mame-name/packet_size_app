@@ -131,6 +131,7 @@ def main():
             st.dataframe(df_final, use_container_width=True)
 
         except Exception as e: st.error(f"エラー: {e}")
-    else: st.warning("ファイルをアップロードしてください")
+    else: 
+        st.info("👈 左側のパネルから「実績データベース (.xlsm)」をアップロードしてください。")
 
 if __name__ == "__main__": main()
