@@ -61,7 +61,7 @@ def main():
             
             # ボタン配置
             submit = st.button("計算実行", use_container_width=True, type="primary")
-            if st.button("クリア", use_container_width=True):
+            if st.button("入力内容をクリア", use_container_width=True):
                 st.session_state.reset_key += 1
                 st.rerun()
 
