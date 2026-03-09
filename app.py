@@ -31,7 +31,6 @@ def main():
     with st.sidebar:
         st.subheader("📁 実績データ読込")
         uploaded_file = st.file_uploader("実績XLSM読込", type=['xlsm'], label_visibility="collapsed")
-        result_container = st.container()
 
         # フォームの代わりにコンテナを使用（クリア機能を有効にするため）
         with st.container():
@@ -64,7 +63,9 @@ def main():
             if st.button("入力内容をクリア", use_container_width=True):
                 st.session_state.reset_key += 1
                 st.rerun()
-
+                
+        result_container = st.container()
+        
         sim_data = None
         if submit:
             try:
